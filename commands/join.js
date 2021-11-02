@@ -1,5 +1,5 @@
 const DiscordJS = require('discord.js');
-const { teamLock } = require('./settings.json');
+const fs = require('fs');
 module.exports = {
     name: 'join',
     description: "Request to join a team",
@@ -8,7 +8,8 @@ module.exports = {
         let red = message.guild.roles.cache.find((role) => role.name === "Red")
         let yellow = message.guild.roles.cache.find((role) => role.name === "Yellow")
 
-        if(teamLock){
+        const settings = JSON.parse(fs.readFileSync('./settings.json'));
+        if(settings.teamLock){
             message.channel.send("Teams are locked! You cannot switch teams! If you believe this is a mistake, contact a moderator.");
             return;
         }

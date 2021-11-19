@@ -1,14 +1,20 @@
-const DiscordJS = require('discord.js');
 const fs = require('fs');
+const checkAllowedChannels = require('../modules/checkAllowedChannels');
 module.exports = {
     name: 'join',
-    description: "Request to join a team",
+    description: "Request to join a team.\nArguments: (Team to join; \"red\", \"yellow\".)",
     execute(message, args){
+        const settings = JSON.parse(fs.readFileSync('./settings.json'));
+        var allowedChannels = 
+        [ settings.channels.noTeam, settings.channels.red, settings.channels.yellow ]
+        if(!checkAllowedChannels(message, allowedChannels)){
+            return;
+        }
+
         const author = message.member;
         let red = message.guild.roles.cache.find((role) => role.name === "Red")
         let yellow = message.guild.roles.cache.find((role) => role.name === "Yellow")
 
-        const settings = JSON.parse(fs.readFileSync('./settings.json'));
         if(settings.teamLock){
             message.channel.send("Teams are locked! You cannot switch teams! If you believe this is a mistake, contact a moderator.");
             return;

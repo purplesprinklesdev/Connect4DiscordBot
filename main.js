@@ -73,5 +73,3 @@ exports.setGuild = function(_guild) {
 }
 
 client.login(process.env.TOKEN);
-
-//client.user.setPresence({ activities: [{ name: 'connect 4 with your mom' }], status: 'online' });

@@ -11,9 +11,8 @@ module.exports = {
 
         var allowedChannels = 
         [ settings.channels.red, settings.channels.yellow ];
-        if(!checkAllowedChannels(message, allowedChannels)) {
+        if(!checkAllowedChannels(message, allowedChannels)) 
             return;
-        }
 
         if(gameInfo.started === false) {
             message.channel.send("A game has not started yet");

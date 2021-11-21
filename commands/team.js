@@ -12,15 +12,12 @@ module.exports = {
         }
 
         const author = message.member;
-        let red = message.guild.roles.cache.find((role) => role.name === "Red")
-        let yellow = message.guild.roles.cache.find((role) => role.name === "Yellow")
-
         var currentTeam;
 
-        if(author.roles.cache.has(red.id)){
+        if(author.roles.cache.has(settings.roles.red)){
             currentTeam = 'Red';
         }
-        else if(author.roles.cache.has(yellow.id)){
+        else if(author.roles.cache.has(settings.roles.red)){
             currentTeam = 'Yellow';
         }
         else{

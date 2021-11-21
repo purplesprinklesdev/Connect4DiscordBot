@@ -10,7 +10,7 @@ settings.response = null;
 writeTo('./settings.json', settings);
 
 const client = new discord.Client({
-    intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES] 
+    intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MEMBERS] 
 });
 
 const prefix = '!';

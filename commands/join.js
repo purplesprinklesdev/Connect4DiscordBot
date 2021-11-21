@@ -12,8 +12,8 @@ module.exports = {
         }
 
         const author = message.member;
-        let red = message.guild.roles.cache.find((role) => role.name === "Red")
-        let yellow = message.guild.roles.cache.find((role) => role.name === "Yellow")
+        const red = message.guild.roles.cache.get(settings.roles.red);
+        const yellow = message.guild.roles.cache.get(settings.roles.yellow);
 
         if(settings.teamLock){
             message.channel.send("Teams are locked! You cannot switch teams! If you believe this is a mistake, contact a moderator.");
@@ -44,10 +44,7 @@ module.exports = {
                 message.channel.send("You are already on Yellow Team!");
             }
         }
-        else{
-            message.channel.send(
-                "Please choose a valid team. Example: \"!join red\" or \"!join yellow\""
-                );
-        }
+        else
+            message.channel.send("Please choose a valid team. Example: \"!join red\" or \"!join yellow\"");
     }
 }

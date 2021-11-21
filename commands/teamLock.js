@@ -9,27 +9,17 @@ module.exports = {
         const settings = JSON.parse(fs.readFileSync('./settings.json'));
         var allowedChannels = 
         [ settings.channels.mod ]
-        if(!checkAllowedChannels(message, allowedChannels)){
+        if(!checkAllowedChannels(message, allowedChannels))
             return;
-        }
 
-        const author = message.member;
-        let botMod = message.guild.roles.cache.find((role) => role.name === "BotMod")
-
-        if(author.roles.cache.has(botMod.id)){
-            const settings = JSON.parse(fs.readFileSync('./settings.json'));
-            if(settings.teamLock){
-                settings.teamLock = false;
-                message.channel.send("Teams have been unlocked!");
-            }
-            else{
-                settings.teamLock = true;
-                message.channel.send("Teams have been locked!");
-            }
-            writeTo('./settings.json', settings);
+        if (settings.teamLock) {
+            settings.teamLock = false;
+            message.channel.send("Teams have been unlocked!");
         }
-        else{
-            message.channel.send("You do not have sufficient permissions to execute this command.");
+        else {
+            settings.teamLock = true;
+            message.channel.send("Teams have been locked!");
         }
+        writeTo('./settings.json', settings);
     }
 }

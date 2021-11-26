@@ -1,12 +1,12 @@
-const scale = [
+const scale = [ //how many seconds in
     86400, //day
-    2629800, //month
+    2629800, //month, special case needed
     31557600, //year
     3600, //hour
     60, //minute
     1, //second
 ];
-const max = [
+const max = [ //max amount
     31, //day, special case needed
     12, //month
     Number.POSITIVE_INFINITY, //year
@@ -15,15 +15,19 @@ const max = [
     60, //second
 ];
 exports.difference = function (current, schedule){
-    let total = 0;
-    for(let i = 0; i < 6; i++) {
-        var difference = schedule[i] - current[i];
-        if(difference < 0)
-            difference = 0;
+    let d1 = exports.toDateObj(current);
+    let d2 = exports.toDateObj(schedule);
 
-        total += difference * scale[i];
-    }
-    return total;
+    var diff = d2 - d1; //in millis
+    diff /= 1000; //in sec
+
+    if(diff < 0)
+        diff = 0;
+
+    return diff;
+}
+exports.toDateObj = function (date){
+    return new Date(date[2], date[1] - 1, date[0], date[3], date[4], date[5]);
 }
 exports.add = function(date, sec) {
     var carry = sec;

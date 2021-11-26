@@ -3,9 +3,16 @@ const fs = require('fs');
 module.exports = {
     name: 'info',
     description: "Gives info about the bot",
+    allowedChannels: [ 'noTeam', 'red', 'yellow', 'mod' ],
     execute(message, args) {
-        const settings = JSON.parse(fs.readFileSync('./settings.json'));
-        let isMod = message.member.roles.cache.has(settings.roles.mod);
+        const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+        let isMod = null;
+        try {
+            isMod = message.member.roles.cache.has(settings.roles.mod);
+        }
+        catch(err) {
+            isMod = true;
+        }
 
         let embed = new MessageEmbed()
             .setColor('#000000')
@@ -22,7 +29,7 @@ module.exports = {
         }
 
         message.channel.send({ embeds: [embed] });
-        if(!settings.hasBeenSetup) 
+        if(!settings || !settings.complete) 
             message.channel.send("It seems like your server is not set up to use the bot yet. Use !setup.");
     }
 }

@@ -1,58 +1,73 @@
 const { MessageEmbed } = require('discord.js');
 const fs = require('fs');
-const main = require('../main');
-const writeTo = require('../modules/writeTo');
-let settings = JSON.parse(fs.readFileSync('./settings.json'));
-
-let setupMember;
-let guild;
+const writeTo = require('../functions/writeTo');
 
 let roles = [];
 let channels = [];
 
 function resetServer(message) {
+    const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+    roles = [
+        settings.roles.yellow,
+        settings.roles.red,
+        settings.roles.mod
+    ];
+    channels = [
+        settings.channels.category,
+        settings.channels.gameOutput,
+        settings.channels.noTeam,
+        settings.channels.red,
+        settings.channels.yellow,
+        settings.channels.mod
+    ];
+
     for(let i = 0; i < roles.length; i++) {
-        let role = main.getGuild().roles.cache.get(roles[i]);
+        let role = message.guild.roles.cache.get(roles[i]);
         try { role.delete(); }
         catch(err) { message.channel.send(`Error occured while deleting role ${role}.`); }
-        
     }
     for(let i = 0; i < channels.length; i++) {
-        let channel = main.getGuild().channels.cache.get(channels[i]);
+        let channel = message.guild.channels.cache.get(channels[i]);
         try { channel.delete(); }
         catch(err) { message.channel.send(`Error occured while deleting channel ${channel}.`); }
     }
-    settings.hasBeenSetup = false;
-    writeTo('./settings.json', settings);
+
+    fs.rmSync(`./settings/${message.guild.id}.json`);
     message.channel.send("Reset Complete");
 }
 
 module.exports = {
     name: 'reset',
     description: "Removes all bot-created roles and channels [MODERATOR]\nArguments: (Force server to reset while changing nothing; \"force\".)",
+    allowedChannels: [ 'all' ],
     execute(message, args) { 
-        settings = JSON.parse(fs.readFileSync('./settings.json'));
-        guild = main.getGuild();
-        if(!settings.hasBeenSetup) {
+        const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+        if(!settings || !settings.complete) {
             message.channel.send("Server has not been setup. There's nothing to remove!");
             return;
         }
-        if(args[0] === 'force') {
-            settings.hasBeenSetup = false;
-            writeTo('./settings.json', settings);
-            message.channel.send("Force reset complete.");
+
+        let modRole = message.guild.roles.cache.find(role => role.id === settings.roles.mod);
+        if(!modRole) {
+            fs.rmSync(`./settings/${message.guild.id}.json`);
+            message.channel.send(`Server has been set up, but the mod role has been removed and your permissions cannot be verified. 
+            A force reset has been completed, please manually remove all roles and channels and use !setup.`);
             return;
         }
-        let modRole = guild.roles.cache.find(role => role.id === settings.roles.mod);
         if(!message.member.roles.cache.has(modRole.id)) {
             message.channel.send("You do not have permission to use this command.");
             return;
         }
-        
-        
-        setupMember = message.member;
+
+        if(args[0] === 'force') {
+            fs.rmSync(`./settings/${message.guild.id}.json`);
+            message.channel.send("Force reset complete.");
+            return;
+        }
+
         settings.response = 'reset';
-        writeTo('./settings.json', settings);
+        settings.responseMember = message.member.id;
+        writeTo(`./settings/${message.guild.id}.json`, settings);
 
         var embed  = new MessageEmbed()
             .setColor('#000000')
@@ -63,28 +78,9 @@ module.exports = {
     },
 
     response(message) {
-        if(message.member === setupMember) {
-            if(message.content === 'y') {
-                settings = JSON.parse(fs.readFileSync('./settings.json'));
-                roles = [ 
-                    settings.roles.yellow,
-                    settings.roles.red,
-                    settings.roles.mod 
-                ];
-                channels = [
-                    settings.channels.category,
-                    settings.channels.gameOutput,
-                    settings.channels.noTeam,
-                    settings.channels.red,
-                    settings.channels.yellow,
-                    settings.channels.mod
-                ];
-
-                resetServer(message);
-            }
-            else {
-                message.channel.send("Cancelling Reset");
-            }
-        }
+        const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+        settings.response = '';
+        writeTo(`./settings/${message.guild.id}.json`, settings);
+        resetServer(message);
     }
 }

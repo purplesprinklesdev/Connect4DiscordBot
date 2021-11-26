@@ -1,9 +1,6 @@
 const { MessageEmbed, Permissions } = require('discord.js');
 const fs = require('fs');
-const writeTo = require('../modules/writeTo');
-const main = require('../main');
-let settings = null;
-let setupMember;
+const writeTo = require('../functions/writeTo');
 
 const requiredPermissions = [
     'SEND_MESSAGES',
@@ -14,10 +11,9 @@ const requiredPermissions = [
 ];
 
 function checkReqPermissions(message) {
-    let guild = main.getGuild();
     let lackedPermissions = "";
     for(let i = 0; i < requiredPermissions.length; i++) {
-        if(!guild.me.permissions.has(requiredPermissions[i])) {
+        if(!message.guild.me.permissions.has(requiredPermissions[i])) {
             lackedPermissions += ', '
             lackedPermissions += requiredPermissions[i];
         }
@@ -30,9 +26,10 @@ function checkReqPermissions(message) {
     }
 }
 
-async function setupServer() {
-    const guild = main.getGuild();
+async function setupServer(message) {
+    const guild = message.guild;
     const botRole = guild.roles.cache.find((role) => role.name === 'Connect4Bot');
+    const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
 
     settings.roles = {};
     settings.channels = {};
@@ -43,21 +40,21 @@ async function setupServer() {
         color: 'PURPLE',
         mentionable: false
     }).catch(console.error);
-    settings.roles.mod = modRole.id; writeTo('./settings.json', settings);
+    settings.roles.mod = modRole.id;
 
     const redRole = await guild.roles.create({
         name: 'Red Team',
         color: 'RED',
         mentionable: true
     }).catch(console.error);
-    settings.roles.red = redRole.id; writeTo('./settings.json', settings);
+    settings.roles.red = redRole.id;
 
     const yellowRole = await guild.roles.create({
         name: 'Yellow Team',
         color: 'YELLOW',
         mentionable: true
     }).catch(console.error);
-    settings.roles.yellow = yellowRole.id; writeTo('./settings.json', settings);
+    settings.roles.yellow = yellowRole.id;
     //#endregion
     //#region Channels
     const category = await guild.channels.create('connect-4', { 
@@ -166,31 +163,49 @@ async function setupServer() {
     ]);
     settings.channels.mod = modChannel.id;
     //#endregion
-    
-    settings.hasBeenSetup = true;
-    writeTo('./settings.json', settings);
+    //#region Defaults
+    settings.teamLock = false;
+    settings.pingEveryone = true;
+    settings.lastTickTime = 0;
+    settings.votes = [];
+    settings.grid = [];
+    settings.turn = undefined;
+    settings.gameStarted = false;
+    settings.complete = true;
+    settings.schedule = null;
+    //#endregion
+    writeTo(`./settings/${message.guild.id}.json`, settings);
 
-    setupMember.roles.add(modRole);
+    message.member.roles.add(modRole);
 
-    let modChannelObj = guild.channels.cache.get(settings.channels.mod);
+    var modChannelObj = guild.channels.cache.get(settings.channels.mod);
     modChannelObj.send("Setup Completed with 0 errors. Hooray!:tada: \n\nYou might need to change the role heirarchy a bit, though. \nFor a list of commands, type \"!info\".")
 }
 
 module.exports = {
     name: 'setup',
     description: "Sets up the bot to work with different servers. [MODERATOR]",
+    allowedChannels: [ 'all' ],
     execute(message, args){
-        settings = JSON.parse(fs.readFileSync('./settings.json'));
-        if(settings.hasBeenSetup) {
-            message.channel.send("Server already setup!");
-            return;
+        if(fs.existsSync(`./settings/${message.guild.id}.json`)) {
+            let settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+            if(settings.complete === undefined) {
+                message.channel.send("Your server has unfinished setup files, we're going to delete them and start again.");
+                fs.rmSync(`./settings/${message.guild.id}.json`);
+            }
+            else {
+                message.channel.send("Server already setup!");
+                return;
+            }
         }
+        const settings = {};
+
         console.log("Commencing permission check...");
         checkReqPermissions(message);
 
-        setupMember = message.member;
         settings.response = 'setup';
-        writeTo('./settings.json', settings);
+        settings.responseMember = message.member.id;
+        writeTo(`./settings/${message.guild.id}.json`, settings);
 
         var embed  = new MessageEmbed()
             .setColor('#000000')
@@ -201,15 +216,10 @@ module.exports = {
     },
     
     response(message) {
-        settings = JSON.parse(fs.readFileSync('./settings.json'));
-        if(message.member === setupMember) {
-            if(message.content === 'y') {
-                message.channel.send("Beginning Setup...");
-                setupServer();
-            }
-            else {
-                message.channel.send("Cancelling Setup");
-            }
-        }
+        const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+        message.channel.send("Beginning Setup...");
+        settings.response = '';
+        writeTo(`./settings/${message.guild.id}.json`, settings);
+        setupServer(message);
     }
 }

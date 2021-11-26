@@ -1,17 +1,11 @@
-const DiscordJS = require('discord.js');
 const fs = require('fs');
-const checkAllowedChannels = require('../modules/checkAllowedChannels');
-const writeTo = require('../modules/writeTo');
+const writeTo = require('../functions/writeTo');
 module.exports = {
     name: 'teamlock',
     description: "Lock the teams so no one can switch. [MODERATOR]",
-    execute(message, args){
-        const settings = JSON.parse(fs.readFileSync('./settings.json'));
-        var allowedChannels = 
-        [ settings.channels.mod ]
-        if(!checkAllowedChannels(message, allowedChannels))
-            return;
-
+    allowedChannels: [ 'mod' ],
+    execute(message){
+        const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
         if (settings.teamLock) {
             settings.teamLock = false;
             message.channel.send("Teams have been unlocked!");
@@ -20,6 +14,6 @@ module.exports = {
             settings.teamLock = true;
             message.channel.send("Teams have been locked!");
         }
-        writeTo('./settings.json', settings);
+        writeTo(`./settings/${message.guild.id}.json`, settings);
     }
 }

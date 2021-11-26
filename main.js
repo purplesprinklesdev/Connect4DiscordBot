@@ -1,20 +1,18 @@
 const discord = require('discord.js');
 const dotenv = require('dotenv');
-const writeTo = require('./modules/writeTo');
+const writeTo = require('./functions/writeTo');
+const checkAllowedChannels = require('./functions/checkAllowedChannels');
+const date = require('./functions/date');
+const game = require('./game');
 
 dotenv.config();
 const fs = require('fs');
-
-const settings = JSON.parse(fs.readFileSync('./settings.json'));
-settings.response = null;
-writeTo('./settings.json', settings);
 
 const client = new discord.Client({
     intents: [discord.Intents.FLAGS.GUILDS, discord.Intents.FLAGS.GUILD_MESSAGES, discord.Intents.FLAGS.GUILD_MEMBERS] 
 });
 
 const prefix = '!';
-let guild = null;
 
 client.commands = new discord.Collection();
 
@@ -26,50 +24,84 @@ for(const file of commandFiles) {
 }
 
 client.once('ready', () => {
-    console.log('ChessBot is online')
+    console.log('Connect4Bot is online');
+
+    //set up schedules again if the bot shuts down
+    const settingsFiles = fs.readdirSync('./settings/').filter(file => file.endsWith('.json'));
+    for(const file of settingsFiles) {
+        const settings = JSON.parse(fs.readFileSync(`./settings/${file}`));
+        if(file == 'emojis.json' || !settings.schedule)
+            continue;
+
+        const guild = client.guilds.cache.get(file.slice(0, file.search('.json')));
+
+        var difference = date.difference(date.current(), settings.schedule);
+        if(difference < 60) {
+            difference = 60;
+            settings.schedule = date.add(date.current(), 60);
+            writeTo(`./settings/${guild.id}.json`, settings);
+        }
+            
+        const modChannel = guild.channels.cache.get(settings.channels.mod);
+        switch (settings.scheduleReason) {
+            case 'start': 
+                setTimeout(game.start, difference * 1000, settings.lastTickTime, guild);
+                break;
+            case 'stop': 
+                setTimeout(function() {
+                    settings.gameStarted = false;
+                    settings.schedule = null;
+                    settings.scheduleReason = '';
+                    writeTo(`./settings/${guild.id}.json`, settings);
+                }, difference * 1000);
+                break;
+            case 'tick':
+                setTimeout(game.resume, difference * 1000, settings.lastTickTime, guild);
+                break;
+        }
+        modChannel.send(`It seems that the bot was shut off before it could execute a ${settings.scheduleReason} according to its schedule. The game will now ${settings.scheduleReason} in ${difference} seconds. Use !cancel to cancel this.`);
+    }
 });
 
-client.on('messageCreate', message => {
-    guild = message.guild;
-    const settings = JSON.parse(fs.readFileSync('./settings.json'));
 
-    if(message.author.bot) return;
+client.on('messageCreate', message => {
+    const settingsFiles = fs.readdirSync('./settings/').filter(file => file.endsWith('.json'));
     
+    if(message.author.bot) return;
+    if(message.channel.type == 'DM') return;
+
     if(!message.content.startsWith(prefix)) {
-        if(settings.response != null) {
-            if(message.content === 'y') 
-                client.commands.get(settings.response).response(message);
-            
-            settings.response = null;
-            writeTo('./settings.json', settings);
-            return;
+        if(settingsFiles.includes(`${message.guild.id}.json`)) {
+            const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
+            if(settings.response !== '' && settings.responseMember === message.member.id) {
+                if(message.content === 'y') 
+                    client.commands.get(settings.response).response(message);
+            }
         }
-        else
-            return;
+        return;
     }
 
-    const args = message.content.slice(prefix.length).split(/ +/)
-    const command = args.shift().toLowerCase()
-    if(!command) {
+    const args = message.content.slice(prefix.length).split(/ +/);
+    const command = args.shift().toLowerCase();
+
+    if(!settingsFiles.includes(`${message.guild.id}.json`) && command != 'setup') {
+        message.channel.send("You must set up the server before you can use commands. Type \"!setup\".");
+        return;
+    }
+
+    var commandFile;
+    commandFile = client.commands.get(command);
+    if(commandFile == undefined) {
         message.channel.send("Invalid command! Type !info for a list of commands.");
         return;
     }
-    if(!settings.hasBeenSetup){
-        if(command === 'setup' || command === 'info') {  }
-        else{
-            message.channel.send("You must set up the server before you can use commands. Please type \"!setup\".");
-            return;
-        }
+
+    if(!checkAllowedChannels(message, commandFile.allowedChannels)) {
+        message.channel.send("You either don't have sufficient permissions to execute this command or are using it in the wrong channel.");
+        return;
     }
     
-    client.commands.get(command).execute(message, args);
+    commandFile.execute(message, args);
 });
-
-exports.getGuild = function() {
-    return guild;
-}
-exports.setGuild = function(_guild) {
-    guild = _guild;
-}
 
 client.login(process.env.TOKEN);

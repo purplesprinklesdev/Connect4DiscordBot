@@ -1,15 +1,8 @@
-const fs = require('fs');
-const checkAllowedChannels = require('../modules/checkAllowedChannels');
 module.exports = {
     name: 'move',
     description: "Move a user to the other team. [MODERATOR]\nArguments: (User ID)",
+    allowedChannels: [ 'mod' ],
     async execute(message, args){
-        const settings = JSON.parse(fs.readFileSync('./settings.json'));
-        var allowedChannels = 
-        [ settings.channels.mod ]
-        if(!checkAllowedChannels(message, allowedChannels))
-            return;
-
         if(!args[0]) {
             message.channel.send("Please provide a valid user ID. To get user ID's, follow this guide: https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-");
             return;

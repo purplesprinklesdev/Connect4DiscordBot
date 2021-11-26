@@ -1,7 +1,6 @@
 const fs = require('fs');
-module.exports = function(path, input) {
+module.exports = function(path, input, sender) {
     var inputString = JSON.stringify(input);
-    
     fs.writeFileSync(path, inputString, function(err){
         if(err){
             console.log(err)

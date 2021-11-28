@@ -29,53 +29,10 @@ exports.difference = function (current, schedule){
 exports.toDateObj = function (date){
     return new Date(date[2], date[1] - 1, date[0], date[3], date[4], date[5]);
 }
-exports.add = function(date, sec) {
-    var carry = sec;
-    addSecToDate = function() {
-        for(let i = 5; i > 2; i--) {
-            if((carry / scale[i]) + date[i] > max[i]) {
-                date[i + 1]++; //from the overflow
-    
-                carry -= (max[i] - date[i]) * scale[i]; //subtract from carry what it used to get to the max, multiplied by scale
-                var remainder = carry % scale[i];
-                date[i] = remainder;
-                carry -= remainder;
-            }
-            else{
-                date[i] += carry / scale[i]; 
-                return;
-            }
-        }
-        for(let i = 0; i < 3; i++) {
-            let max = max[i]
-            if(scale[i] === 0) { //if on days, because some months have more days than others
-                switch(date[1]) {
-                    case 2:
-                        if(date[2] % 4 && !date[2] % 100) //leap year, Gregorian
-                            max = 29;
-                        else
-                            max = 28;
-                    break;
-                    
-                    case 3 || 6 || 9 || 11: max = 30; break;
-                    default: max = 31; break;
-                }
-            }
-            if((carry / scale[i]) + date[i] > max[i]) {
-                date[i + 1]++; //from the overflow
-    
-                carry -= (max[i] - date[i]) * scale[i]; //subtract from carry what it used to get to the max, multiplied by scale
-                var remainder = carry % scale[i];
-                date[i] = remainder + 1;
-                carry -= remainder;
-            }
-            else{
-                date[i] += carry / scale[i]; 
-                return;
-            }
-        }
-    }
-    return date;
+exports.add = function(sec) {
+    let d = new Date();
+    d = new Date(d.getTime() + sec * 1000);
+    return exports.toArray(d);
 }
 exports.current = function (){
     let cDate = new Date();
@@ -89,19 +46,33 @@ exports.current = function (){
     ];
     return dateArr;
 }
-exports.toArray = function (string){
-    var position = string.search('-');
-    var dateStr = string.slice(0, position);
-    var timeStr = string.slice(position + 1);
+exports.toArray = function (input){
+    if(typeof input == 'string') {
+        var position = input.search('-');
+        var dateStr = input.slice(0, position);
+        var timeStr = input.slice(position + 1);
 
-    const sDateArr = dateStr.split('/');
-    var timeArr = timeStr.split(':');
+        const sDateArr = dateStr.split('/');
+        var timeArr = timeStr.split(':');
 
-    for (let i = 0; i < timeArr.length; i++) {
-        sDateArr[sDateArr.length] = timeArr[i];
+        for (let i = 0; i < timeArr.length; i++) {
+            sDateArr[sDateArr.length] = timeArr[i];
+        }
+
+        return sDateArr;
     }
-
-    return sDateArr;
+    else {
+        let dateArr = [
+            input.getUTCDate(),
+            input.getUTCMonth() + 1,
+            input.getUTCFullYear(),
+            input.getUTCHours(),
+            input.getUTCMinutes(),
+            input.getUTCSeconds()
+        ];
+        return dateArr;
+    }
+    
 }
 exports.toString = function (array){
     return `${array[0]}/${array[1]}/${array[2]}-${array[3]}:${array[4]}:${array[5]}`;

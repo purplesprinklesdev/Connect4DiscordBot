@@ -42,7 +42,7 @@ exports.start = function (sec, guild) {
         `<@&${roleMention}>, you go first! Go to <#${channelMention}> and discuss your next move. When you're ready to vote, use !vote.`
     );
 
-    settings.schedule = date.add(date.current(), sec);
+    settings.schedule = date.add(sec);
     settings.scheduleReason = 'tick';
     writeTo(`./settings/${guild.id}.json`, settings);
     setInterval(tick, sec * 1000, sec, guild);
@@ -51,8 +51,17 @@ exports.resume = function (sec, guild) {
     tick(sec, guild);
 }
 function tick(sec, guild) {
-    const settings = JSON.parse(fs.readFileSync(`./settings/${guild.id}.json`));
-    settings.schedule = date.add(date.current(), sec);
+    const settings;
+    try{
+        settings = JSON.parse(fs.readFileSync(`./settings/${guild.id}.json`));
+    }
+    catch(err) {
+        return;
+    }
+    if(settings.gameStarted == false)
+        return;
+    
+    settings.schedule = date.add(sec);
     settings.scheduleReason = 'tick';
 
     //--Vote Counting--
@@ -97,7 +106,6 @@ function tick(sec, guild) {
     //drop piece down the column
     let space;
     for (let i = settings.grid.rowCount - 1; i > -1; i--) {
-        console.log(`${i}, ${winColumn}`);
         space = settings.grid.rows[i][winColumn];
         if (space.state === "empty") {
             space.state = settings.turn; break;

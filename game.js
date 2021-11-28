@@ -51,7 +51,7 @@ exports.resume = function (sec, guild) {
     tick(sec, guild);
 }
 function tick(sec, guild) {
-    const settings;
+    const settings = null;
     try{
         settings = JSON.parse(fs.readFileSync(`./settings/${guild.id}.json`));
     }

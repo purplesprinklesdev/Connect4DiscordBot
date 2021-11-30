@@ -38,8 +38,6 @@ client.once('ready', () => {
         var difference = date.difference(date.current(), settings.schedule);
         if(difference < 60) {
             difference = 60;
-            settings.schedule = date.add(date.current(), 60);
-            writeTo(`./settings/${guild.id}.json`, settings);
         }
             
         const modChannel = guild.channels.cache.get(settings.channels.mod);

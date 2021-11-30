@@ -51,11 +51,12 @@ exports.resume = function (sec, guild) {
     tick(sec, guild);
 }
 function tick(sec, guild) {
-    const settings = null;
+    let settings = null;
     try{
         settings = JSON.parse(fs.readFileSync(`./settings/${guild.id}.json`));
     }
     catch(err) {
+        console.log(err);
         return;
     }
     if(settings.gameStarted == false)

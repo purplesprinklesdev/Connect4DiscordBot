@@ -1,7 +1,7 @@
 const discord = require('discord.js');
 const dotenv = require('dotenv');
-const writeTo = require('./functions/writeTo');
 const checkAllowedChannels = require('./functions/checkAllowedChannels');
+const writeTo = require('./functions/writeTo');
 const date = require('./functions/date');
 const game = require('./game');
 
@@ -38,26 +38,16 @@ client.once('ready', () => {
         var difference = date.difference(date.current(), settings.schedule);
         if(difference < 60) {
             difference = 60;
+            settings.schedule = date.add(60);
+            writeTo(`./settings/${file}`, settings);
         }
-            
+        if(settings.scheduleReason == 'start')
+            setTimeout(game.start, difference * 1000, settings.lastTickTime, guild);
+        else if(settings.scheduleReason == 'tick') 
+            setTimeout(game.resume, difference * 1000, settings.lastTickTime, guild);
+
         const modChannel = guild.channels.cache.get(settings.channels.mod);
-        switch (settings.scheduleReason) {
-            case 'start': 
-                setTimeout(game.start, difference * 1000, settings.lastTickTime, guild);
-                break;
-            case 'stop': 
-                setTimeout(function() {
-                    settings.gameStarted = false;
-                    settings.schedule = null;
-                    settings.scheduleReason = '';
-                    writeTo(`./settings/${guild.id}.json`, settings);
-                }, difference * 1000);
-                break;
-            case 'tick':
-                setTimeout(game.resume, difference * 1000, settings.lastTickTime, guild);
-                break;
-        }
-        modChannel.send(`It seems that the bot was shut off before it could execute a ${settings.scheduleReason} according to its schedule. The game will now ${settings.scheduleReason} in ${difference} seconds. Use !cancel to cancel this.`);
+        modChannel.send(`It seems that the bot was shut off before it could execute a ${settings.scheduleReason} according to its schedule. The game will now ${settings.scheduleReason} in ${difference} seconds. Use !reschedule to change this.`);
     }
 });
 

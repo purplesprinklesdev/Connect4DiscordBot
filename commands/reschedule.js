@@ -2,6 +2,7 @@ const { MessageEmbed } = require('discord.js');
 const fs = require('fs');
 const date = require('../functions/date');
 const writeTo = require('../functions/writeTo');
+const game = require('../game');
 
 let delayArr = [];
 let delayString = null;
@@ -38,7 +39,7 @@ module.exports = {
             .setColor('#000000')
             .setTitle('Are you sure you would like to reschedule? Type \"y\" to confirm. Type \"n\" to cancel.')
 
-        if(date.difference(date.current(), delayArr) = 0) 
+        if(date.difference(date.current(), delayArr) == 0) 
             embed.setDescription(`Schedule will be changed to ${delayString}. However, it is a time in the past. The action will execute immediately.`);
         else
             embed.setDescription(`Schedule will be changed to ${delayString}.`);
@@ -50,6 +51,12 @@ module.exports = {
         settings.response = '';
         settings.schedule = delayArr;
         writeTo(`./settings/${message.guild.id}.json`, settings);
+
+        var difference = date.difference(date.current(), settings.schedule);
+        if(settings.scheduleReason == 'start')
+            setTimeout(game.start, difference * 1000, settings.lastTickTime, message.guild);
+        else if(settings.scheduleReason == 'tick') 
+            setTimeout(game.resume, difference * 1000, settings.lastTickTime, message.guild);
 
         message.channel.send("Schedule changed.");
     }

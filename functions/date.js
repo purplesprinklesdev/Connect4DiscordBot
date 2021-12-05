@@ -77,3 +77,11 @@ exports.toArray = function (input){
 exports.toString = function (array){
     return `${array[0]}/${array[1]}/${array[2]}-${array[3]}:${array[4]}:${array[5]}`;
 }
+exports.equals = function (d1, d2){
+    for(let i=0; i<d1.length; d1++) {
+        if(d1[i] != d2[i]) {
+            return false;
+        }
+    }
+    return true;
+}

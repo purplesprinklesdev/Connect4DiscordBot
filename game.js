@@ -4,7 +4,16 @@ const writeTo = require('./functions/writeTo');
 const date = require('./functions/date');
 
 exports.start = function (sec, guild) {
-    const settings = JSON.parse(fs.readFileSync(`./settings/${guild.id}.json`));
+    let settings = null;
+    try{
+        settings = JSON.parse(fs.readFileSync(`./settings/${guild.id}.json`));
+    }
+    catch(err) {
+        console.log(err);
+        return;
+    }
+    if(settings.schedule == null || !date.equals(settings.schedule, date.current())) 
+        return;
 
     settings.grid = new Grid(6, 7);
     settings.gameStarted = true;
@@ -59,7 +68,7 @@ function tick(sec, guild) {
         console.log(err);
         return;
     }
-    if(settings.gameStarted == false)
+    if(settings.gameStarted == false || settings.schedule == null || !date.equals(settings.schedule, date.current()))
         return;
     
     settings.schedule = date.add(sec);
@@ -83,7 +92,7 @@ function tick(sec, guild) {
         votes[column]++;
     }
     if (settings.votes.length === 0) {
-        var column = Math.round(Math.random() * settings.grid.columnCount);
+        var column = Math.round(Math.random() * settings.grid.columnCount - 1);
         votes[column] = 1;
     }
 

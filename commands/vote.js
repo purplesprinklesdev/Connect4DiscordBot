@@ -21,14 +21,14 @@ module.exports = {
             }
         }
 
-        if(!args[0] == Math.floor(args[0]) || //is a decimal
+        if(!args[0] == Math.floor(args[0]) || //is not a decimal
             args[0] > settings.gridColumns || 
             args[0] < 1 //out of range
             ){
             message.channel.send("Column index out of range.");
             return;
         }
-        if(!settings.grid.rows[0][args[0]].state === 'empty') 
+        if(!settings.grid.rows[0][args[0] - 1].state === 'empty') 
             message.channel.send("Illegal Move! Double check the game board before voting again.");
 
         if(settings.turn === 'red' && message.member.roles.cache.has(settings.roles.red)) 

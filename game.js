@@ -2,6 +2,7 @@ const { MessageEmbed } = require('discord.js');
 const fs = require('fs');
 const writeTo = require('./functions/writeTo');
 const date = require('./functions/date');
+const timers = require('./functions/timers');
 
 exports.start = function (sec, guild) {
     let settings = null;
@@ -12,8 +13,8 @@ exports.start = function (sec, guild) {
         console.log(err);
         return;
     }
-    if(settings.schedule == null || !date.equals(settings.schedule, date.current())) 
-        return;
+    timers.stop(guild.id);
+
 
     settings.grid = new Grid(6, 7);
     settings.gameStarted = true;
@@ -54,9 +55,10 @@ exports.start = function (sec, guild) {
     settings.schedule = date.add(sec);
     settings.scheduleReason = 'tick';
     writeTo(`./settings/${guild.id}.json`, settings);
-    setInterval(tick, sec * 1000, sec, guild);
+    timers.add(guild.id, setTimeout(tick, sec * 1000, sec, guild));
 }
 exports.resume = function (sec, guild) {
+    timers.stop(guild.id);
     tick(sec, guild);
 }
 function tick(sec, guild) {
@@ -68,11 +70,13 @@ function tick(sec, guild) {
         console.log(err);
         return;
     }
-    if(settings.gameStarted == false || settings.schedule == null || !date.equals(settings.schedule, date.current()))
+    if(settings.gameStarted == false || settings.schedule == null)
         return;
     
     settings.schedule = date.add(sec);
     settings.scheduleReason = 'tick';
+    writeTo(`./settings/${guild.id}.json`, settings);
+    timers.add(guild.id, setTimeout(exports.resume, sec * 1000, sec, guild));
 
     //--Vote Counting--
     //settings.votes is unsorted, each value contains the column the vote is for and the if of the user that picked it.
@@ -97,7 +101,6 @@ function tick(sec, guild) {
     }
 
     settings.votes = [];
-    writeTo(`./settings/${guild.id}.json`, settings);
 
     //resolve ties
     let winColumn = 0;
@@ -239,7 +242,10 @@ function tick(sec, guild) {
         if (gameInfo.turn === 'yellow') roleMention = settings.roles.yellow;
 
         gameChannel.send(`:tada: <@&${roleMention}>** won the game!** :tada:`);
-        exports.stop();
+        timers.stop(guild.id);
+        settings.schedule = null;
+        settings.scheduleReason = '';
+        writeTo(`./settings/${guild.id}.json`, settings);
         return;
     }
 
@@ -252,7 +258,10 @@ function tick(sec, guild) {
     }
     if (closedSpaces === settings.grid.columnCount) {
         gameChannel.send(`No possible moves left! No one wins!`);
-        exports.stop();
+        timers.stop(guild.id);
+        settings.schedule = null;
+        settings.scheduleReason = '';
+        writeTo(`./settings/${guild.id}.json`, settings);
         return;
     }
 

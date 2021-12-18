@@ -3,6 +3,8 @@ const fs = require('fs');
 const date = require('../functions/date');
 const writeTo = require('../functions/writeTo');
 const game = require('../game');
+const timers = require('../functions/timers');
+
 
 let delayArr = [];
 let delayString = null;
@@ -52,11 +54,18 @@ module.exports = {
         settings.schedule = delayArr;
         writeTo(`./settings/${message.guild.id}.json`, settings);
 
+        timers.stop(message.guild.id);
+
         var difference = date.difference(date.current(), settings.schedule);
-        if(settings.scheduleReason == 'start')
-            setTimeout(game.start, difference * 1000, settings.lastTickTime, message.guild);
-        else if(settings.scheduleReason == 'tick') 
-            setTimeout(game.resume, difference * 1000, settings.lastTickTime, message.guild);
+        if(difference == 0)
+            difference = 0.1;
+
+        if(settings.scheduleReason == 'start') {
+            timers.add(message.guild.id, setTimeout(game.start, difference * 1000, settings.lastTickTime, message.guild));
+        }
+        else {
+            timers.add(message.guild.id, setTimeout(game.resume, difference * 1000, settings.lastTickTime, message.guild));
+        }
 
         message.channel.send("Schedule changed.");
     }

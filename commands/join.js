@@ -1,8 +1,10 @@
+const fs = require('fs');
 module.exports = {
     name: 'join',
     description: "Request to join a team.\nArguments: (Team to join; \"red\", \"yellow\".)",
     allowedChannels: [ 'noTeam', 'red', 'yellow' ],
     execute(message, args){
+        const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
         const roles = message.member.roles;
         const red = message.guild.roles.cache.get(settings.roles.red);
         const yellow = message.guild.roles.cache.get(settings.roles.yellow);

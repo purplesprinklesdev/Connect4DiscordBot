@@ -4,6 +4,7 @@ const checkAllowedChannels = require('./functions/checkAllowedChannels');
 const writeTo = require('./functions/writeTo');
 const date = require('./functions/date');
 const game = require('./game');
+const timers = require('./functions/timers');
 
 dotenv.config();
 const fs = require('fs');
@@ -41,12 +42,20 @@ client.once('ready', () => {
             settings.schedule = date.add(60);
             writeTo(`./settings/${file}`, settings);
         }
-        if(settings.scheduleReason == 'start')
-            setTimeout(game.start, difference * 1000, settings.lastTickTime, guild);
-        else if(settings.scheduleReason == 'tick') 
-            setTimeout(game.resume, difference * 1000, settings.lastTickTime, guild);
 
         const modChannel = guild.channels.cache.get(settings.channels.mod);
+        try{
+            if(settings.scheduleReason == 'start')
+                timers.add(guild.id, setTimeout(game.start, difference * 1000, settings.lastTickTime, guild));
+            else if(settings.scheduleReason == 'tick') 
+                timers.add(guild.id, setTimeout(game.resume, difference * 1000, settings.lastTickTime, guild));
+        }
+        catch (err){
+            modChannel.send("An error occured while executing a scheduled action.")
+            console.log("An error occured while executing a scheduled action: " + err);
+        }
+
+        
         modChannel.send(`It seems that the bot was shut off before it could execute a ${settings.scheduleReason} according to its schedule. The game will now ${settings.scheduleReason} in ${difference} seconds. Use !reschedule to change this.`);
     }
 });
@@ -62,8 +71,15 @@ client.on('messageCreate', message => {
         if(settingsFiles.includes(`${message.guild.id}.json`)) {
             const settings = JSON.parse(fs.readFileSync(`./settings/${message.guild.id}.json`));
             if(settings.response !== '' && settings.responseMember === message.member.id) {
-                if(message.content === 'y') 
-                    client.commands.get(settings.response).response(message);
+                try {
+                    if(message.content === 'y') 
+                        client.commands.get(settings.response).response(message);
+                }
+                catch (err){
+                    message.channel.send("An error occured while processing the command.");
+                    console.log("An error occured while processing a command: " + err);
+                }
+                
             }
         }
         return;
@@ -85,11 +101,19 @@ client.on('messageCreate', message => {
     }
 
     if(!checkAllowedChannels(message, commandFile.allowedChannels)) {
-        message.channel.send("You either don't have sufficient permissions to execute this command or are using it in the wrong channel.");
+        message.channel.send("You either don't have sufficient permissions to execute this command or are using it in the wrong channel. Check !info.");
         return;
     }
     
     commandFile.execute(message, args);
+    /*try{
+        
+    }
+    catch (err){
+        message.channel.send("An error occured while processing the command.");
+        console.log("An error occured while processing a command: " + err);
+    }*/
+    
 });
 
 client.login(process.env.TOKEN);

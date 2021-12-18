@@ -3,6 +3,7 @@ const { MessageEmbed } = require('discord.js');
 const writeTo = require('../functions/writeTo');
 const date = require('../functions/date');
 const game = require('../game');
+const timers = require('../functions/timers');
 
 let tickTime;
 let delayString;
@@ -63,6 +64,6 @@ module.exports = {
         writeTo(`./settings/${message.guild.id}.json`, settings, 'start');
 
         message.channel.send("Starting game...");
-        setTimeout(game.start, date.difference(date.current(), delayArr) * 1000, tickTime, message.guild);
+        timers.add(message.guild.id, setTimeout(game.start, date.difference(date.current(), delayArr) * 1000, tickTime, message.guild));
     }
 }

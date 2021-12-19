@@ -238,8 +238,8 @@ function tick(sec, guild) {
 
     var roleMention;
     if (win) {
-        if (gameInfo.turn === 'red') roleMention = settings.roles.red;
-        if (gameInfo.turn === 'yellow') roleMention = settings.roles.yellow;
+        if (settings.turn === 'red') roleMention = settings.roles.red;
+        if (settings.turn === 'yellow') roleMention = settings.roles.yellow;
 
         gameChannel.send(`:tada: <@&${roleMention}>** won the game!** :tada:`);
         timers.stop(guild.id);

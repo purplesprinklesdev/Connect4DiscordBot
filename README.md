@@ -4,6 +4,8 @@ A Discord bot that allows for server wide Connect-4 games. Users are assigned te
 Use !info to get a list of commands.
 A single running instance of the bot can handle multiple game instances.
 
+Development on this repository has ceased.
+
 Install Instructions
 ------
 - Install node.js.
